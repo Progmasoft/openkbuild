@@ -1,0 +1,65 @@
+# SPDX-FileCopyrightText: 2026 Progmasoft <support@progmasoft.com>
+# SPDX-License-Identifier: MIT
+
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: Test (${{ matrix.cc }}${{ matrix.sanitize && ', sanitizers' || '' }})
+    runs-on: ubuntu-26.04
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - cc: clang
+          - cc: gcc
+          - cc: clang
+            sanitize: address,undefined
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Install BSD Make, the compilers and Criterion
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes --no-install-recommends bmake clang gcc libcriterion-dev
+
+      - name: Build and test
+        env:
+          CC: ${{ matrix.cc }}
+          SANITIZE: ${{ matrix.sanitize }}
+        run: bmake CC="$CC" SANITIZE="$SANITIZE" test
+
+  format:
+    name: Format
+    runs-on: ubuntu-26.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      # The profile of Progmasoft Core C Coding Guidelines needs clang-format 23.
+      - name: Format
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes --no-install-recommends bmake shellcheck
+          python3 -m venv "$RUNNER_TEMP/format"
+          "$RUNNER_TEMP/format/bin/pip" install clang-format==23.1.5
+          bmake format CLANG_FORMAT="$RUNNER_TEMP/format/bin/clang-format"
+          shellcheck tests/mk/run.sh

@@ -1,0 +1,6 @@
+-std=gnu99
+-I.
+-Isrc
+-Ithird_party/tomlc17
+-Wall
+-Wextra
