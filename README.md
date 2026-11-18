@@ -140,7 +140,7 @@ bmake install PREFIX=/usr/local     # bin/openkbuild, share/openkbuild/mk/
 ```
 
 A Makefile finds the `.mk` files when make searches `PREFIX/share/openkbuild/mk`. `-m` replaces the search path, so
-the system's own directory comes after it: `bmake -m PREFIX/share/openkbuild/mk -m "$(bmake -V .SYSPATH -f /dev/null)"`.
+the directory of the system's `sys.mk` comes after it, for example `bmake -m PREFIX/share/openkbuild/mk -m /usr/share/mk`.
 
 ## License
 

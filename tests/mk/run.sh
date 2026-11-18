@@ -13,17 +13,16 @@ tool=$(cd "$(dirname "$1")" && pwd)/$(basename "$1")
 here=$(cd "$(dirname "$0")" && pwd)
 mk=$(cd "$here/../../mk" && pwd)
 make=${BMAKE:-bmake}
-# -m replaces the search path of <...> includes, so the system's own directory goes after mk/.
-system=$("$make" -V .SYSPATH -f /dev/null)
+# -m replaces the search path of <...> includes, so the directory of the system's sys.mk, the
+# first makefile make reads, goes after mk/.
+system=$(dirname "$("$make" -f /dev/null -V .MAKE.MAKEFILES | awk '{ print $1 }')")
 work=$(mktemp -d)
 trap 'rm -rf "$work"' EXIT
 cp "$here"/project/* "$work"/
 cd "$work"
 
 build() {
-        # Each directory of the system path is one word, and each gets its own -m.
-        # shellcheck disable=SC2046,SC2086
-        "$make" -m "$mk" $(printf -- '-m %s ' $system) OPENKBUILD="$tool" "$@"
+        "$make" -m "$mk" -m "$system" OPENKBUILD="$tool" "$@"
 }
 
 fail() {
